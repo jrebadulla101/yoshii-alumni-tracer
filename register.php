@@ -25,38 +25,53 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $document_type = mysqli_real_escape_string($conn, $_POST['document_type']);
     $additional_info = mysqli_real_escape_string($conn, $_POST['additional_info']);
     $signature_data = mysqli_real_escape_string($conn, $_POST['signature_data']);
-
-    // Handle file upload
-    $document_upload = '';
-    if (isset($_FILES['document_upload']) && $_FILES['document_upload']['error'] == 0) {
-        $target_dir = "uploads/";
-        $file_extension = strtolower(pathinfo($_FILES["document_upload"]["name"], PATHINFO_EXTENSION));
-        $new_filename = uniqid() . '.' . $file_extension;
-        $target_file = $target_dir . $new_filename;
-
-        if (move_uploaded_file($_FILES["document_upload"]["tmp_name"], $target_file)) {
-            $document_upload = $target_file;
-        }
-    }
-
-    $sql = "INSERT INTO alumni (first_name, middle_name, middle_initial, last_name, course, year_graduated, 
-            email, phone, address, job_title, company_name, company_address, work_position, is_course_related, 
-            employment_status, date_started, is_current_job, date_ended, document_type, document_upload, 
-            additional_info, signature_data) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-    $stmt = mysqli_prepare($conn, $sql);
-    mysqli_stmt_bind_param($stmt, "sssssssssssssssssssss", 
-        $first_name, $middle_name, $middle_initial, $last_name, $course, $year_graduated, 
-        $email, $phone, $address, $job_title, $company_name, $company_address, $work_position, 
-        $is_course_related, $employment_status, $date_started, $is_current_job, $date_ended, 
-        $document_type, $document_upload, $additional_info, $signature_data);
-
-    if (mysqli_stmt_execute($stmt)) {
-        header("Location: success.php");
-        exit();
+    $date_signed = date('Y-m-d H:i:s'); // Add current date and time
+    
+    // Password handling
+    $password = $_POST['password'];
+    $confirm_password = $_POST['confirm_password'];
+    
+    // Validate password
+    if ($password !== $confirm_password) {
+        $error = "Passwords do not match!";
+    } elseif (strlen($password) < 8) {
+        $error = "Password must be at least 8 characters long!";
     } else {
-        $error = "Error: " . mysqli_error($conn);
+        // Hash password
+        $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+        // Handle file upload
+        $document_upload = '';
+        if (isset($_FILES['document_upload']) && $_FILES['document_upload']['error'] == 0) {
+            $target_dir = "uploads/";
+            $file_extension = strtolower(pathinfo($_FILES["document_upload"]["name"], PATHINFO_EXTENSION));
+            $new_filename = uniqid() . '.' . $file_extension;
+            $target_file = $target_dir . $new_filename;
+
+            if (move_uploaded_file($_FILES["document_upload"]["tmp_name"], $target_file)) {
+                $document_upload = $target_file;
+            }
+        }
+
+        $sql = "INSERT INTO alumni (first_name, middle_name, middle_initial, last_name, course, year_graduated, 
+                email, phone, address, job_title, company_name, company_address, work_position, is_course_related, 
+                employment_status, date_started, is_current_job, date_ended, document_type, document_upload, 
+                additional_info, signature_data, password, date_signed) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        $stmt = mysqli_prepare($conn, $sql);
+        mysqli_stmt_bind_param($stmt, "sssssssssssssssssssssss", 
+            $first_name, $middle_name, $middle_initial, $last_name, $course, $year_graduated, 
+            $email, $phone, $address, $job_title, $company_name, $company_address, $work_position, 
+            $is_course_related, $employment_status, $date_started, $is_current_job, $date_ended, 
+            $document_type, $document_upload, $additional_info, $signature_data, $hashed_password, $date_signed);
+
+        if (mysqli_stmt_execute($stmt)) {
+            header("Location: success.php");
+            exit();
+        } else {
+            $error = "Error: " . mysqli_error($conn);
+        }
     }
 }
 ?>
@@ -81,6 +96,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div class="card glass-effect">
                     <div class="card-body">
                         <h2 class="text-center text-maroon mb-4">Alumni Registration</h2>
+                        
+                        <?php if (isset($error)): ?>
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-circle me-2"></i><?php echo $error; ?>
+                            </div>
+                        <?php endif; ?>
                         
                         <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
                             <!-- Personal Information -->
@@ -160,6 +181,38 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
                                         <input type="text" class="form-control" name="address" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Account Information -->
+                            <div class="section-title mb-4 mt-5">
+                                <h4 class="text-maroon">Account Information</h4>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Password</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                        <input type="password" class="form-control" name="password" 
+                                               minlength="8" required>
+                                        <button class="btn btn-outline-secondary" type="button" 
+                                                onclick="togglePassword('password')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">Password must be at least 8 characters long</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Confirm Password</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                        <input type="password" class="form-control" name="confirm_password" 
+                                               minlength="8" required>
+                                        <button class="btn btn-outline-secondary" type="button" 
+                                                onclick="togglePassword('confirm_password')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -327,6 +380,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                             </button>
                                         </div>
                                         <input type="hidden" name="signature_data" id="signatureData">
+                                        <div class="mt-2 text-muted">
+                                            <small>By signing this form, you agree to the terms and conditions.</small>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -487,6 +543,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 verificationStatus.innerHTML = '<i class="fas fa-exclamation-circle text-danger me-2"></i>Error Verifying ID';
                 verificationStatus.className = 'alert alert-danger';
                 console.error('Error:', error);
+            }
+        }
+
+        // Add password toggle function
+        function togglePassword(inputId) {
+            const input = document.querySelector(`input[name="${inputId}"]`);
+            const button = input.nextElementSibling;
+            const icon = button.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
             }
         }
 
