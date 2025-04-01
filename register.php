@@ -2,7 +2,21 @@
 session_start();
 require_once 'config/database.php';
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
+// Check if the user has declined the consent
+if (isset($_POST['decline_consent'])) {
+    $_SESSION['consent_declined'] = true;
+}
+
+// Check if the user has accepted the consent
+if (isset($_POST['accept_consent'])) {
+    $_SESSION['consent_accepted'] = true;
+    // Redirect to the same page to avoid form processing
+    header("Location: register.php");
+    exit();
+}
+
+// Process the actual registration form only if consent was previously accepted and form is submitted
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_SESSION['consent_accepted']) && isset($_POST['submit_registration'])) {
     // Handle form submission
     $student_number = mysqli_real_escape_string($conn, $_POST['student_number']);
     $first_name = mysqli_real_escape_string($conn, $_POST['first_name']);
@@ -115,7 +129,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="col-md-10">
                 <div class="card glass-effect">
                     <div class="card-body">
-                        <h2 class="text-center text-maroon mb-4">Alumni Registration</h2>
+                        <div class="text-center mb-4">
+                            <img src="assets/images/earist-logo.png" alt="EARIST Logo" style="height: 80px;">
+                            <h2 class="text-maroon mt-3">Alumni Tracer System</h2>
+                            <p class="lead">Eulogio "Amang" Rodriguez Institute of Science and Technology</p>
+                        </div>
                         
                         <?php if (isset($error)): ?>
                             <div class="alert alert-danger">
@@ -123,289 +141,356 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             </div>
                         <?php endif; ?>
                         
-                        <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
-                            <!-- Personal Information -->
-                            <div class="section-title mb-4">
-                                <h4 class="text-maroon">Personal Information</h4>
+                        <?php if (isset($_SESSION['consent_declined'])): ?>
+                            <div class="text-center py-4">
+                                <div class="mb-4">
+                                    <i class="fas fa-info-circle fa-4x text-maroon"></i>
+                                    <h3 class="mt-3">Thank You</h3>
+                                    <p class="mb-4">
+                                        We respect your decision. If you would like to register in the future or have any questions,
+                                        please contact your College Dean or Associate Dean to process your registration.
+                                    </p>
+                                    <a href="index.php" class="btn btn-outline-maroon">
+                                        <i class="fas fa-home me-2"></i>Return to Home
+                                    </a>
+                                </div>
                             </div>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Student Number</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-id-badge"></i></span>
-                                        <input type="text" class="form-control" name="student_number" required>
+                        <?php elseif (!isset($_SESSION['consent_accepted'])): ?>
+                            <!-- Consent Form -->
+                            <div class="consent-form">
+                                <h3 class="text-center mb-3">Data Privacy Consent</h3>
+                                
+                                <div class="card mb-4">
+                                    <div class="card-body consent-text" style="max-height: 300px; overflow-y: auto;">
+                                        <p><strong>ALUMNI TRACER SYSTEM DATA PRIVACY CONSENT</strong></p>
+                                        <p>In compliance with the Data Privacy Act of 2012, and its Implementing Rules and Regulations, I hereby acknowledge that:</p>
+                                        
+                                        <p>1. I am aware that Eulogio "Amang" Rodriguez Institute of Science and Technology (EARIST) collects, uses, and processes my personal information for legitimate educational purposes and to monitor my employment progression after graduation.</p>
+                                        
+                                        <p>2. I understand that my personal information will be used for:</p>
+                                        <ul>
+                                            <li>Creating and maintaining alumni records</li>
+                                            <li>Processing and responding to my inquiries and requests</li>
+                                            <li>Generating statistical information and reports</li>
+                                            <li>Communicating news, events, and opportunities relevant to alumni</li>
+                                            <li>Conducting research to enhance educational programs and services</li>
+                                            <li>Complying with regulatory requirements</li>
+                                        </ul>
+                                        
+                                        <p>3. I understand that my information may be shared with authorized personnel within the institution, government agencies, and other legitimate organizations for educational, research, historical, and statistical purposes.</p>
+                                        
+                                        <p>4. I acknowledge that EARIST will implement reasonable and appropriate security measures to protect my personal information.</p>
+                                        
+                                        <p>5. I understand that I have the right to access, correct, and object to the processing of my personal information as provided by the Data Privacy Act of 2012.</p>
+                                        
+                                        <p>By clicking "I Accept" below, I consent to the collection, use, and processing of my personal information as described above.</p>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">First Name</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-user"></i></span>
-                                        <input type="text" class="form-control" name="first_name" required>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 d-grid">
+                                        <form method="POST">
+                                            <button type="submit" name="decline_consent" class="btn btn-outline-secondary btn-lg">
+                                                <i class="fas fa-times-circle me-2"></i>I Decline
+                                            </button>
+                                        </form>
                                     </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Middle Name</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-user"></i></span>
-                                        <input type="text" class="form-control" name="middle_name">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Middle Initial</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-user"></i></span>
-                                        <input type="text" class="form-control" name="middle_initial" maxlength="1">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Gender</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-venus-mars"></i></span>
-                                        <select class="form-select" name="gender" required>
-                                            <option value="">Select Gender...</option>
-                                            <option value="Male">Male</option>
-                                            <option value="Female">Female</option>
-                                            <option value="Other">Other</option>
-                                            <option value="Prefer not to say">Prefer not to say</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Last Name (Maiden Name)</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-user"></i></span>
-                                        <input type="text" class="form-control" name="last_name" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Course</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-graduation-cap"></i></span>
-                                        <select class="form-select" name="course" required>
-                                            <option value="">Select Course...</option>
-                                            <?php
-                                            $courses_query = "SELECT course_name FROM courses ORDER BY course_name";
-                                            $courses_result = mysqli_query($conn, $courses_query);
-                                            while ($course = mysqli_fetch_assoc($courses_result)) {
-                                                echo "<option value='" . htmlspecialchars($course['course_name']) . "'>" . 
-                                                     htmlspecialchars($course['course_name']) . "</option>";
-                                            }
-                                            ?>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Year Graduated</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-calendar"></i></span>
-                                        <input type="number" class="form-control" name="year_graduated" 
-                                               min="1900" max="<?php echo date('Y'); ?>" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Email Address</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                                        <input type="email" class="form-control" name="email" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Phone Number</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                                        <input type="tel" class="form-control" name="phone" required>
-                                    </div>
-                                </div>
-                                <div class="col-12">
-                                    <label class="form-label">Complete Address</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
-                                        <input type="text" class="form-control" name="address" required>
+                                    <div class="col-md-6 d-grid">
+                                        <form method="POST">
+                                            <button type="submit" name="accept_consent" class="btn btn-maroon btn-lg">
+                                                <i class="fas fa-check-circle me-2"></i>I Accept
+                                            </button>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Account Information -->
-                            <div class="section-title mb-4 mt-5">
-                                <h4 class="text-maroon">Account Information</h4>
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Password</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                                        <input type="password" class="form-control" name="password" id="password"
-                                               minlength="8" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
-                                               required oninput="checkPasswordStrength(this.value)">
-                                        <button class="btn btn-outline-secondary" type="button" 
-                                                onclick="togglePassword('password')">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                    </div>
-                                    <div class="password-requirements small text-muted mt-1">
-                                        <div id="length-check"><i class="fas fa-times"></i> At least 8 characters</div>
-                                        <div id="uppercase-check"><i class="fas fa-times"></i> At least one uppercase letter</div>
-                                        <div id="lowercase-check"><i class="fas fa-times"></i> At least one lowercase letter</div>
-                                        <div id="number-check"><i class="fas fa-times"></i> At least one number</div>
-                                        <div id="special-check"><i class="fas fa-times"></i> At least one special character</div>
-                                    </div>
-                                    <div class="progress mt-2" style="height: 5px;">
-                                        <div id="password-strength" class="progress-bar" role="progressbar" style="width: 0%"></div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Confirm Password</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
-                                        <input type="password" class="form-control" name="confirm_password" id="confirm_password"
-                                               minlength="8" required oninput="checkPasswordMatch()">
-                                        <button class="btn btn-outline-secondary" type="button" 
-                                                onclick="togglePassword('confirm_password')">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                    </div>
-                                    <div id="password-match" class="small mt-1"></div>
-                                </div>
-                            </div>
-
-                            <!-- Employment Status Check -->
-                            <div class="section-title mb-4 mt-5">
-                                <h4 class="text-maroon">Employment Status</h4>
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="employment_check" 
-                                               id="employed" value="employed" onchange="toggleEmploymentSection()" required>
-                                        <label class="form-check-label" for="employed">Employed</label>
-                                    </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="employment_check" 
-                                               id="unemployed" value="unemployed" onchange="toggleEmploymentSection()" required>
-                                        <label class="form-check-label" for="unemployed">Unemployed</label>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Employment Information -->
-                            <div id="employmentSection" style="display: none;">
-                                <div class="section-title mb-4 mt-5">
-                                    <h4 class="text-maroon">Employment Information</h4>
+                        <?php else: ?>
+                            <!-- Registration Form -->
+                            <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+                                <!-- Personal Information -->
+                                <div class="section-title mb-4">
+                                    <h4 class="text-maroon">Personal Information</h4>
                                 </div>
                                 <div class="row g-3">
                                     <div class="col-md-6">
-                                        <label class="form-label">Current Job Title</label>
+                                        <label class="form-label">Student Number</label>
                                         <div class="input-group">
-                                            <span class="input-group-text"><i class="fas fa-briefcase"></i></span>
-                                            <input type="text" class="form-control" name="job_title" required>
+                                            <span class="input-group-text"><i class="fas fa-id-badge"></i></span>
+                                            <input type="text" class="form-control" name="student_number" required>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label">Company Name</label>
+                                        <label class="form-label">First Name</label>
                                         <div class="input-group">
-                                            <span class="input-group-text"><i class="fas fa-building"></i></span>
-                                            <input type="text" class="form-control" name="company_name" required>
+                                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                            <input type="text" class="form-control" name="first_name" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Middle Name</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                            <input type="text" class="form-control" name="middle_name">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Middle Initial</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                            <input type="text" class="form-control" name="middle_initial" maxlength="1">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Last Name (Maiden Name)</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                            <input type="text" class="form-control" name="last_name" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Gender</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-venus-mars"></i></span>
+                                            <select class="form-select" name="gender" required>
+                                                <option value="">Select Gender...</option>
+                                                <option value="Male">Male</option>
+                                                <option value="Female">Female</option>
+                                                <option value="Other">Other</option>
+                                                <option value="Prefer not to say">Prefer not to say</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Course</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-graduation-cap"></i></span>
+                                            <select class="form-select" name="course" required>
+                                                <option value="">Select Course...</option>
+                                                <?php
+                                                $courses_query = "SELECT course_name FROM courses ORDER BY course_name";
+                                                $courses_result = mysqli_query($conn, $courses_query);
+                                                while ($course = mysqli_fetch_assoc($courses_result)) {
+                                                    echo "<option value='" . htmlspecialchars($course['course_name']) . "'>" . 
+                                                         htmlspecialchars($course['course_name']) . "</option>";
+                                                }
+                                                ?>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Year Graduated</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                                            <input type="number" class="form-control" name="year_graduated" 
+                                                   min="1900" max="<?php echo date('Y'); ?>" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Email Address</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                            <input type="email" class="form-control" name="email" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Phone Number</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                            <input type="tel" class="form-control" name="phone" required>
                                         </div>
                                     </div>
                                     <div class="col-12">
-                                        <label class="form-label">Company Address</label>
+                                        <label class="form-label">Complete Address</label>
                                         <div class="input-group">
-                                            <span class="input-group-text"><i class="fas fa-map-marked-alt"></i></span>
-                                            <input type="text" class="form-control" name="company_address" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Work Position/Level</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text"><i class="fas fa-user-tie"></i></span>
-                                            <input type="text" class="form-control" name="work_position" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Is Your Job Related to Your Course?</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text"><i class="fas fa-check-circle"></i></span>
-                                            <select class="form-select" name="is_course_related" required>
-                                                <option value="">Select...</option>
-                                                <option value="Yes">Yes</option>
-                                                <option value="No">No</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Date Started</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
-                                            <input type="date" class="form-control" name="date_started" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Is this your current job?</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text"><i class="fas fa-briefcase"></i></span>
-                                            <select class="form-select" name="is_current_job" required>
-                                                <option value="">Select...</option>
-                                                <option value="Yes">Yes</option>
-                                                <option value="No">No</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Date Ended (if not current job)</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text"><i class="fas fa-calendar-times"></i></span>
-                                            <input type="date" class="form-control" name="date_ended">
+                                            <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                                            <input type="text" class="form-control" name="address" required>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- ID Verification -->
-                            <div class="section-title mb-4 mt-5">
-                                <h4 class="text-maroon">ID Verification</h4>
-                                <p class="text-muted small">Please upload a clear photo of your ID for verification</p>
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Document Type</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-id-card"></i></span>
-                                        <select class="form-select" name="document_type" required>
-                                            <option value="">Select Document Type...</option>
-                                            <option value="Alumni ID">Alumni ID</option>
-                                            <option value="Student ID">Student ID</option>
-                                            <option value="Government ID">Government ID</option>
-                                            <option value="Other">Other</option>
-                                        </select>
+                                <!-- Account Information -->
+                                <div class="section-title mb-4 mt-5">
+                                    <h4 class="text-maroon">Account Information</h4>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Password</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                            <input type="password" class="form-control" name="password" id="password"
+                                                   minlength="8" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+                                                   required oninput="checkPasswordStrength(this.value)">
+                                            <button class="btn btn-outline-secondary" type="button" 
+                                                    onclick="togglePassword('password')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <div class="password-requirements small text-muted mt-1">
+                                            <div id="length-check"><i class="fas fa-times"></i> At least 8 characters</div>
+                                            <div id="uppercase-check"><i class="fas fa-times"></i> At least one uppercase letter</div>
+                                            <div id="lowercase-check"><i class="fas fa-times"></i> At least one lowercase letter</div>
+                                            <div id="number-check"><i class="fas fa-times"></i> At least one number</div>
+                                            <div id="special-check"><i class="fas fa-times"></i> At least one special character</div>
+                                        </div>
+                                        <div class="progress mt-2" style="height: 5px;">
+                                            <div id="password-strength" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Confirm Password</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                            <input type="password" class="form-control" name="confirm_password" id="confirm_password"
+                                                   minlength="8" required oninput="checkPasswordMatch()">
+                                            <button class="btn btn-outline-secondary" type="button" 
+                                                    onclick="togglePassword('confirm_password')">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <div id="password-match" class="small mt-1"></div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Upload Document</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-upload"></i></span>
-                                        <input type="file" class="form-control" id="document_upload" 
-                                               name="document_upload" accept="image/*" required 
-                                               onchange="previewAndVerifyID(this)">
+
+                                <!-- Employment Status Check -->
+                                <div class="section-title mb-4 mt-5">
+                                    <h4 class="text-maroon">Employment Status</h4>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="employment_check" 
+                                                   id="employed" value="employed" onchange="toggleEmploymentSection()" required>
+                                            <label class="form-check-label" for="employed">Employed</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" name="employment_check" 
+                                                   id="unemployed" value="unemployed" onchange="toggleEmploymentSection()" required>
+                                            <label class="form-check-label" for="unemployed">Unemployed</label>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="col-12">
-                                    <div class="card verification-card mt-3">
-                                        <div class="card-body">
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <h5 class="card-title">ID Preview</h5>
-                                                    <img id="idPreview" src="" alt="ID Preview" class="img-fluid d-none mb-3" style="max-height: 200px; width: auto;">
-                                                    <div id="verification-status" class="alert alert-info">
-                                                        <i class="fas fa-info-circle"></i> Please upload your ID for verification
+
+                                <!-- Employment Information -->
+                                <div id="employmentSection" style="display: none;">
+                                    <div class="section-title mb-4 mt-5">
+                                        <h4 class="text-maroon">Employment Information</h4>
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Current Job Title</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-briefcase"></i></span>
+                                                <input type="text" class="form-control" name="job_title" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Company Name</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-building"></i></span>
+                                                <input type="text" class="form-control" name="company_name" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label">Company Address</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-map-marked-alt"></i></span>
+                                                <input type="text" class="form-control" name="company_address" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Work Position/Level</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-user-tie"></i></span>
+                                                <input type="text" class="form-control" name="work_position" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Is Your Job Related to Your Course?</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-check-circle"></i></span>
+                                                <select class="form-select" name="is_course_related" required>
+                                                    <option value="">Select...</option>
+                                                    <option value="Yes">Yes</option>
+                                                    <option value="No">No</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Date Started</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                                                <input type="date" class="form-control" name="date_started" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Is this your current job?</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-briefcase"></i></span>
+                                                <select class="form-select" name="is_current_job" required>
+                                                    <option value="">Select...</option>
+                                                    <option value="Yes">Yes</option>
+                                                    <option value="No">No</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">Date Ended (if not current job)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text"><i class="fas fa-calendar-times"></i></span>
+                                                <input type="date" class="form-control" name="date_ended">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ID Verification -->
+                                <div class="section-title mb-4 mt-5">
+                                    <h4 class="text-maroon">ID Verification</h4>
+                                    <p class="text-muted small">Please upload a clear photo of your ID for verification</p>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Document Type</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+                                            <select class="form-select" name="document_type" required>
+                                                <option value="">Select Document Type...</option>
+                                                <option value="Alumni ID">Alumni ID</option>
+                                                <option value="Student ID">Student ID</option>
+                                                <option value="Government ID">Government ID</option>
+                                                <option value="Other">Other</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Upload Document</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-upload"></i></span>
+                                            <input type="file" class="form-control" id="document_upload" 
+                                                   name="document_upload" accept="image/*" required 
+                                                   onchange="previewAndVerifyID(this)">
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="card verification-card mt-3">
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <h5 class="card-title">ID Preview</h5>
+                                                        <img id="idPreview" src="" alt="ID Preview" class="img-fluid d-none mb-3" style="max-height: 200px; width: auto;">
+                                                        <div id="verification-status" class="alert alert-info">
+                                                            <i class="fas fa-info-circle"></i> Please upload your ID for verification
+                                                        </div>
                                                     </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <h5 class="card-title">Verification Details</h5>
-                                                    <div id="verification-message"></div>
-                                                    <div id="verification-progress" class="d-none">
-                                                        <div class="progress mb-3">
-                                                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-maroon" 
-                                                                 role="progressbar" style="width: 0%"></div>
+                                                    <div class="col-md-6">
+                                                        <h5 class="card-title">Verification Details</h5>
+                                                        <div id="verification-message"></div>
+                                                        <div id="verification-progress" class="d-none">
+                                                            <div class="progress mb-3">
+                                                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-maroon" 
+                                                                     role="progressbar" style="width: 0%"></div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -413,57 +498,80 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- Additional Information -->
-                            <div class="section-title mb-4 mt-5">
-                                <h4 class="text-maroon">Additional Information</h4>
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <label class="form-label">Additional Information</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text"><i class="fas fa-info-circle"></i></span>
-                                        <textarea class="form-control" name="additional_info" rows="3"></textarea>
-                                    </div>
+                                <!-- Additional Information -->
+                                <div class="section-title mb-4 mt-5">
+                                    <h4 class="text-maroon">Additional Information</h4>
                                 </div>
-                            </div>
-
-                            <!-- Signature -->
-                            <div class="section-title mb-4 mt-5">
-                                <h4 class="text-maroon">Digital Signature</h4>
-                            </div>
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <div class="signature-container">
-                                        <canvas id="signatureCanvas" class="signature-pad"></canvas>
-                                        <div class="signature-controls mt-2">
-                                            <button type="button" class="btn btn-outline-maroon btn-sm" id="clearSignature">
-                                                <i class="fas fa-eraser me-1"></i>Clear
-                                            </button>
-                                        </div>
-                                        <input type="hidden" name="signature_data" id="signatureData">
-                                        <div class="mt-2 text-muted">
-                                            <small>By signing this form, you agree to the terms and conditions.</small>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label">Additional Information</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="fas fa-info-circle"></i></span>
+                                            <textarea class="form-control" name="additional_info" rows="3"></textarea>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div class="text-center mt-5">
-                                <button type="submit" class="btn btn-maroon btn-lg">
-                                    <i class="fas fa-paper-plane me-2"></i>Submit Registration
-                                </button>
-                                <a href="index.php" class="btn btn-outline-maroon btn-lg ms-2">
-                                    <i class="fas fa-arrow-left me-2"></i>Back to Home
-                                </a>
-                            </div>
-                        </form>
+                                <!-- Signature -->
+                                <div class="section-title mb-4 mt-5">
+                                    <h4 class="text-maroon">Digital Signature</h4>
+                                </div>
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <div class="signature-container">
+                                            <canvas id="signatureCanvas" class="signature-pad"></canvas>
+                                            <div class="signature-controls mt-2">
+                                                <button type="button" class="btn btn-outline-maroon btn-sm" id="clearSignature">
+                                                    <i class="fas fa-eraser me-1"></i>Clear
+                                                </button>
+                                            </div>
+                                            <input type="hidden" name="signature_data" id="signatureData">
+                                            <div class="mt-2 text-muted">
+                                                <small>By signing this form, you agree to the terms and conditions.</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="text-center mt-5">
+                                    <button type="submit" name="submit_registration" class="btn btn-maroon btn-lg">
+                                        <i class="fas fa-paper-plane me-2"></i>Submit Registration
+                                    </button>
+                                    <a href="index.php" class="btn btn-outline-maroon btn-lg ms-2">
+                                        <i class="fas fa-arrow-left me-2"></i>Back to Home
+                                    </a>
+                                </div>
+                            </form>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="bg-maroon text-white py-4 mt-5">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <img src="assets/images/earist-logo.png" alt="EARIST Logo" class="me-3" style="height: 50px;">
+                        <div>
+                            <h5 class="mb-0">Alumni Tracer System</h5>
+                            <p class="mb-0">Eulogio "Amang" Rodriguez Institute of Science and Technology</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                    <p class="mb-0">This web system is developed by EARIST CCS</p>
+                    <a href="https://facebook.com/yoshiidesuu" class="text-white" target="_blank">
+                        <i class="fab fa-facebook me-1"></i>facebook.com/yoshiidesuu
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -845,11 +953,46 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     .bg-maroon {
         background-color: #800000 !important;
     }
+    
+    .text-maroon {
+        color: #800000 !important;
+    }
+    
+    .btn-maroon {
+        background-color: #800000;
+        color: white;
+    }
+    
+    .btn-maroon:hover {
+        background-color: #600000;
+        color: white;
+    }
+    
+    .btn-outline-maroon {
+        color: #800000;
+        border-color: #800000;
+    }
+    
+    .btn-outline-maroon:hover {
+        background-color: #800000;
+        color: white;
+    }
 
     #idPreview {
         border: 1px solid #dee2e6;
         border-radius: 5px;
         padding: 5px;
+    }
+    
+    .consent-text {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.25rem;
+        font-size: 0.9rem;
+    }
+    
+    footer {
+        border-top: 1px solid rgba(255,255,255,0.2);
     }
     </style>
 </body>

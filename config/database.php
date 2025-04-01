@@ -89,6 +89,7 @@ $sql = "CREATE TABLE IF NOT EXISTS alumni (
     first_name VARCHAR(50) NOT NULL,
     middle_name VARCHAR(50),
     middle_initial CHAR(1),
+    gender ENUM('Male', 'Female', 'Other', 'Prefer not to say'),
     last_name VARCHAR(50) NOT NULL,
     course VARCHAR(100) NOT NULL,
     year_graduated YEAR NOT NULL,
@@ -111,7 +112,9 @@ $sql = "CREATE TABLE IF NOT EXISTS alumni (
     password VARCHAR(255) NOT NULL,
     date_signed DATETIME NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    salary DECIMAL(10,2),
+    industry VARCHAR(100)
 )";
 
 if (!mysqli_query($conn, $sql)) {

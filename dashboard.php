@@ -71,10 +71,11 @@ error_log("Name: " . $alumni['first_name'] . " " . $alumni['last_name']);
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
     if ($_POST['action'] == 'update_profile') {
         // Process profile update
-        $email = mysqli_real_escape_string($conn, $_POST['email']);
-        $phone = mysqli_real_escape_string($conn, $_POST['phone']);
-        $address = mysqli_real_escape_string($conn, $_POST['address']);
-        $additional_info = mysqli_real_escape_string($conn, $_POST['additional_info']);
+        // Check if form fields are set before attempting to sanitize them
+        $email = isset($_POST['email']) ? mysqli_real_escape_string($conn, $_POST['email']) : $alumni['email'];
+        $phone = isset($_POST['phone']) ? mysqli_real_escape_string($conn, $_POST['phone']) : $alumni['phone'];
+        $address = isset($_POST['address']) ? mysqli_real_escape_string($conn, $_POST['address']) : $alumni['address'];
+        $additional_info = isset($_POST['additional_info']) ? mysqli_real_escape_string($conn, $_POST['additional_info']) : $alumni['additional_info'];
         
         $update_profile_sql = "UPDATE alumni SET 
                                email = ?, phone = ?, address = ?, additional_info = ? 
@@ -247,17 +248,22 @@ function getStatusColor($status) {
     <div id="particles-js"></div>
     <nav class="navbar navbar-expand-lg navbar-dark bg-maroon">
         <div class="container">
-            <a class="navbar-brand" href="#">Alumni Tracer System</a>
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <img src="assets/images/earist-logo.png" alt="EARIST Logo" class="me-2" style="height: 40px;">
+                <span class="fw-bold text-white" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">Alumni Tracer System</span>
+            </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <span class="nav-link">Welcome, <?php echo htmlspecialchars($_SESSION['alumni_name']); ?></span>
+                        <span class="nav-link fw-bold text-white" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">
+                            Welcome, <?php echo htmlspecialchars($_SESSION['alumni_name']); ?>
+                        </span>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="logout.php">
+                        <a class="nav-link text-white fw-bold" href="logout.php" style="text-shadow: 1px 1px 2px rgba(0,0,0,0.7);">
                             <i class="fas fa-sign-out-alt me-1"></i>Logout
                         </a>
                     </li>
@@ -310,15 +316,15 @@ function getStatusColor($status) {
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Email Address</label>
-                                    <input type="email" class="form-control" value="<?php echo htmlspecialchars($alumni['email']); ?>" readonly>
+                                    <input type="email" class="form-control" name="email" value="<?php echo htmlspecialchars($alumni['email']); ?>" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Phone Number</label>
-                                    <input type="tel" class="form-control" value="<?php echo htmlspecialchars($alumni['phone']); ?>" readonly>
+                                    <input type="tel" class="form-control" name="phone" value="<?php echo htmlspecialchars($alumni['phone']); ?>" required>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Complete Address</label>
-                                    <input type="text" class="form-control" value="<?php echo htmlspecialchars($alumni['address']); ?>" readonly>
+                                    <input type="text" class="form-control" name="address" value="<?php echo htmlspecialchars($alumni['address']); ?>" required>
                                 </div>
                             </div>
 
@@ -615,6 +621,29 @@ function getStatusColor($status) {
         </div>
     </div>
 
+    <!-- Footer -->
+    <footer class="bg-maroon text-white py-4 mt-5">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <img src="assets/images/earist-logo.png" alt="EARIST Logo" class="me-3" style="height: 50px;">
+                        <div>
+                            <h5 class="mb-0">Alumni Tracer System</h5>
+                            <p class="mb-0">Eulogio "Amang" Rodriguez Institute of Science and Technology</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                    <p class="mb-0">This web system is developed by EARIST CCS</p>
+                    <a href="https://facebook.com/yoshiidesuu" class="text-white" target="_blank">
+                        <i class="fab fa-facebook me-1"></i>facebook.com/yoshiidesuu
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
     <!-- Add Work Modal -->
     <div class="modal fade" id="addWorkModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
@@ -836,6 +865,15 @@ function getStatusColor($status) {
     }
     .card-header {
         border-bottom: 1px solid rgba(0,0,0,0.125);
+    }
+    .navbar-brand {
+        font-size: 1.5rem;
+    }
+    .navbar-nav .nav-link {
+        font-size: 1.1rem;
+    }
+    footer {
+        border-top: 1px solid rgba(255,255,255,0.2);
     }
     </style>
 </body>

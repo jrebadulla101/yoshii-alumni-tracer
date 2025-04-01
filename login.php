@@ -165,6 +165,44 @@ if (isset($_SESSION['alumni_id'])) {
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="assets/css/style.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <style>
+    .bg-maroon {
+        background-color: #800000 !important;
+    }
+    
+    .text-maroon {
+        color: #800000 !important;
+    }
+    
+    .btn-maroon {
+        background-color: #800000;
+        color: white;
+    }
+    
+    .btn-maroon:hover {
+        background-color: #600000;
+        color: white;
+    }
+    
+    .btn-outline-maroon {
+        color: #800000;
+        border-color: #800000;
+    }
+    
+    .btn-outline-maroon:hover {
+        background-color: #800000;
+        color: white;
+    }
+    
+    footer {
+        border-top: 1px solid rgba(255,255,255,0.2);
+    }
+    
+    /* Add padding to body to prevent content from being hidden behind the fixed footer */
+    body {
+        padding-bottom: 100px;
+    }
+    </style>
 </head>
 <body>
     <div id="particles-js"></div>
@@ -173,7 +211,11 @@ if (isset($_SESSION['alumni_id'])) {
             <div class="col-md-6">
                 <div class="card glass-effect">
                     <div class="card-body">
-                        <h2 class="text-center text-maroon mb-4">Alumni Login</h2>
+                        <div class="text-center mb-4">
+                            <img src="assets/images/earist-logo.png" alt="EARIST Logo" style="height: 80px;" class="mb-3">
+                            <h2 class="text-maroon">Alumni Login</h2>
+                            <p class="lead">Eulogio "Amang" Rodriguez Institute of Science and Technology</p>
+                        </div>
                         <?php if (isset($error)): ?>
                             <div class="alert alert-danger">
                                 <i class="fas fa-exclamation-circle me-2"></i><?php echo $error; ?>
@@ -213,6 +255,29 @@ if (isset($_SESSION['alumni_id'])) {
             </div>
         </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="bg-maroon text-white py-4 fixed-bottom">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center">
+                        <img src="assets/images/earist-logo.png" alt="EARIST Logo" class="me-3" style="height: 50px;">
+                        <div>
+                            <h5 class="mb-0">Alumni Tracer System</h5>
+                            <p class="mb-0">Eulogio "Amang" Rodriguez Institute of Science and Technology</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                    <p class="mb-0">This web system is developed by EARIST CCS</p>
+                    <a href="https://facebook.com/yoshiidesuu" class="text-white" target="_blank">
+                        <i class="fab fa-facebook me-1"></i>facebook.com/yoshiidesuu
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
