@@ -1,23 +1,58 @@
 <?php
+// Enable error reporting
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 define('DB_SERVER', 'localhost');
 define('DB_USERNAME', 'root');
 define('DB_PASSWORD', '');
 define('DB_NAME', 'alumni_tracer');
 
-// Attempt to connect to MySQL database
-$conn = mysqli_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD);
+// First, try to connect to the database directly
+$conn = mysqli_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
 
-// Check connection
+// If direct connection fails, try creating the database
 if (!$conn) {
-    die("Connection failed: " . mysqli_connect_error());
+    // Connect without database selected
+    $conn = mysqli_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD);
+    
+    if (!$conn) {
+        die("Connection failed: " . mysqli_connect_error());
+    }
+    
+    // Create database if not exists
+    $sql = "CREATE DATABASE IF NOT EXISTS " . DB_NAME;
+    if (mysqli_query($conn, $sql)) {
+        // Select the database
+        if (!mysqli_select_db($conn, DB_NAME)) {
+            die("Error selecting database: " . mysqli_error($conn));
+        }
+    } else {
+        die("Error creating database: " . mysqli_error($conn));
+    }
 }
 
-// Create database if not exists
-$sql = "CREATE DATABASE IF NOT EXISTS " . DB_NAME;
-if (mysqli_query($conn, $sql)) {
-    $conn = mysqli_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
+// Set the correct charset
+mysqli_set_charset($conn, "utf8mb4");
+
+// Debug connection
+error_log("=== Database Connection ===");
+error_log("Connected to MySQL: " . ($conn ? "Yes" : "No"));
+error_log("Selected database: " . DB_NAME);
+
+// Verify current database
+$result = mysqli_query($conn, "SELECT DATABASE()");
+$db_name = mysqli_fetch_row($result)[0];
+error_log("Current database: " . $db_name);
+
+// Debug query to check if alumni table exists and has data
+$debug_query = "SELECT COUNT(*) as count FROM alumni";
+$debug_result = mysqli_query($conn, $debug_query);
+if ($debug_result) {
+    $count = mysqli_fetch_assoc($debug_result)['count'];
+    error_log("Number of alumni records: " . $count);
 } else {
-    die("Error creating database: " . mysqli_error($conn));
+    error_log("Error checking alumni table: " . mysqli_error($conn));
 }
 
 // Create courses table
@@ -50,6 +85,7 @@ foreach ($default_courses as $course) {
 // Create alumni table
 $sql = "CREATE TABLE IF NOT EXISTS alumni (
     alumni_id INT PRIMARY KEY AUTO_INCREMENT,
+    student_number VARCHAR(20) NOT NULL UNIQUE,
     first_name VARCHAR(50) NOT NULL,
     middle_name VARCHAR(50),
     middle_initial CHAR(1),
@@ -59,14 +95,14 @@ $sql = "CREATE TABLE IF NOT EXISTS alumni (
     email VARCHAR(100) UNIQUE NOT NULL,
     phone VARCHAR(20) NOT NULL,
     address TEXT NOT NULL,
-    job_title VARCHAR(100) NOT NULL,
-    company_name VARCHAR(100) NOT NULL,
-    company_address TEXT NOT NULL,
-    work_position VARCHAR(100) NOT NULL,
-    is_course_related ENUM('Yes', 'No') NOT NULL,
+    job_title VARCHAR(100),
+    company_name VARCHAR(100),
+    company_address TEXT,
+    work_position VARCHAR(100),
+    is_course_related ENUM('Yes', 'No'),
     employment_status ENUM('Full-time', 'Part-time', 'Self-employed', 'Unemployed') NOT NULL,
-    date_started DATE NOT NULL,
-    is_current_job ENUM('Yes', 'No') NOT NULL,
+    date_started DATE,
+    is_current_job ENUM('Yes', 'No'),
     date_ended DATE,
     document_type ENUM('Alumni ID', 'Student ID', 'Government ID', 'Other') NOT NULL,
     document_upload VARCHAR(255),
@@ -80,6 +116,16 @@ $sql = "CREATE TABLE IF NOT EXISTS alumni (
 
 if (!mysqli_query($conn, $sql)) {
     die("Error creating alumni table: " . mysqli_error($conn));
+}
+
+// Add student_number column if it doesn't exist
+$sql = "SHOW COLUMNS FROM alumni LIKE 'student_number'";
+$result = mysqli_query($conn, $sql);
+if (mysqli_num_rows($result) == 0) {
+    $sql = "ALTER TABLE alumni ADD COLUMN student_number VARCHAR(20) NOT NULL UNIQUE AFTER alumni_id";
+    if (!mysqli_query($conn, $sql)) {
+        die("Error adding student_number column: " . mysqli_error($conn));
+    }
 }
 
 // Create admin table

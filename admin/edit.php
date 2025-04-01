@@ -17,14 +17,29 @@ if (!isset($_GET['id'])) {
 $id = mysqli_real_escape_string($conn, $_GET['id']);
 
 // Get alumni information
-$sql = "SELECT * FROM alumni WHERE id = ?";
+$sql = "SELECT * FROM alumni WHERE alumni_id = ?";
 $stmt = mysqli_prepare($conn, $sql);
+if (!$stmt) {
+    error_log("Prepare failed: " . mysqli_error($conn));
+    die("Database error: " . mysqli_error($conn));
+}
+
 mysqli_stmt_bind_param($stmt, "i", $id);
-mysqli_stmt_execute($stmt);
+if (!mysqli_stmt_execute($stmt)) {
+    error_log("Execute failed: " . mysqli_error($conn));
+    die("Database error: " . mysqli_error($conn));
+}
+
 $result = mysqli_stmt_get_result($stmt);
+if (!$result) {
+    error_log("Get result failed: " . mysqli_error($conn));
+    die("Database error: " . mysqli_error($conn));
+}
+
 $alumni = mysqli_fetch_assoc($result);
 
 if (!$alumni) {
+    error_log("No alumni found with ID: " . $id);
     header("Location: index.php");
     exit();
 }
@@ -65,7 +80,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                    is_current_job = ?, 
                    date_ended = ?, 
                    additional_info = ? 
-                   WHERE id = ?";
+                   WHERE alumni_id = ?";
 
     $update_stmt = mysqli_prepare($conn, $update_sql);
     mysqli_stmt_bind_param($update_stmt, "ssssssssssssssssi", 

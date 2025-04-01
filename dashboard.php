@@ -2,60 +2,102 @@
 session_start();
 require_once 'config/database.php';
 
+// Enable error reporting
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Debug: Check session status
+error_log("Dashboard - Session check");
+error_log("Session ID exists: " . (isset($_SESSION['alumni_id']) ? "Yes" : "No"));
+if (isset($_SESSION['alumni_id'])) {
+    error_log("Alumni ID: " . $_SESSION['alumni_id']);
+}
+
 // Check if user is logged in
 if (!isset($_SESSION['alumni_id'])) {
+    error_log("No session found - redirecting to login");
     header("Location: login.php");
     exit();
 }
 
 // Get alumni information
 $alumni_id = $_SESSION['alumni_id'];
-$sql = "SELECT * FROM alumni WHERE id = ?";
+
+// Debug: Log the alumni_id
+error_log("Fetching alumni info for ID: " . $alumni_id);
+
+// Get alumni information with correct column name
+$sql = "SELECT * FROM alumni WHERE alumni_id = ?";
 $stmt = mysqli_prepare($conn, $sql);
+
+if (!$stmt) {
+    error_log("Prepare failed: " . mysqli_error($conn));
+    die("Database error: " . mysqli_error($conn));
+}
+
 mysqli_stmt_bind_param($stmt, "i", $alumni_id);
-mysqli_stmt_execute($stmt);
+
+if (!mysqli_stmt_execute($stmt)) {
+    error_log("Execute failed: " . mysqli_error($conn));
+    die("Database error: " . mysqli_error($conn));
+}
+
 $result = mysqli_stmt_get_result($stmt);
 $alumni = mysqli_fetch_assoc($result);
 
-// Handle form submission for updates
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $job_title = mysqli_real_escape_string($conn, $_POST['job_title']);
-    $company_name = mysqli_real_escape_string($conn, $_POST['company_name']);
-    $company_address = mysqli_real_escape_string($conn, $_POST['company_address']);
-    $work_position = mysqli_real_escape_string($conn, $_POST['work_position']);
-    $is_course_related = mysqli_real_escape_string($conn, $_POST['is_course_related']);
-    $employment_status = mysqli_real_escape_string($conn, $_POST['employment_status']);
-    $date_started = mysqli_real_escape_string($conn, $_POST['date_started']);
-    $is_current_job = mysqli_real_escape_string($conn, $_POST['is_current_job']);
-    $date_ended = mysqli_real_escape_string($conn, $_POST['date_ended']);
-    $additional_info = mysqli_real_escape_string($conn, $_POST['additional_info']);
+if (!$alumni) {
+    error_log("No alumni found with ID: " . $alumni_id);
+    session_destroy();
+    header("Location: login.php");
+    exit();
+}
 
-    $update_sql = "UPDATE alumni SET 
-                   job_title = ?, 
-                   company_name = ?, 
-                   company_address = ?, 
-                   work_position = ?, 
-                   is_course_related = ?, 
-                   employment_status = ?, 
-                   date_started = ?, 
-                   is_current_job = ?, 
-                   date_ended = ?, 
-                   additional_info = ? 
-                   WHERE id = ?";
+// Get work history with correct column name
+$work_sql = "SELECT * FROM work_history WHERE alumni_id = ? ORDER BY date_started DESC";
+$work_stmt = mysqli_prepare($conn, $work_sql);
+mysqli_stmt_bind_param($work_stmt, "i", $alumni_id);
+mysqli_stmt_execute($work_stmt);
+$work_result = mysqli_stmt_get_result($work_stmt);
+$work_history = [];
+while ($work = mysqli_fetch_assoc($work_result)) {
+    $work_history[] = $work;
+}
 
-    $update_stmt = mysqli_prepare($conn, $update_sql);
-    mysqli_stmt_bind_param($update_stmt, "ssssssssssi", 
-        $job_title, $company_name, $company_address, $work_position, 
-        $is_course_related, $employment_status, $date_started, 
-        $is_current_job, $date_ended, $additional_info, $alumni_id);
+// Debug: Check alumni data
+error_log("Alumni data retrieved successfully");
+error_log("Name: " . $alumni['first_name'] . " " . $alumni['last_name']);
 
-    if (mysqli_stmt_execute($update_stmt)) {
-        $success = "Information updated successfully!";
-        // Refresh alumni data
-        $result = mysqli_stmt_get_result($stmt);
-        $alumni = mysqli_fetch_assoc($result);
-    } else {
-        $error = "Error updating information: " . mysqli_error($conn);
+// Handle new work information submission
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action'])) {
+    if ($_POST['action'] == 'add_work') {
+        $job_title = mysqli_real_escape_string($conn, $_POST['job_title']);
+        $company_name = mysqli_real_escape_string($conn, $_POST['company_name']);
+        $company_address = mysqli_real_escape_string($conn, $_POST['company_address']);
+        $work_position = mysqli_real_escape_string($conn, $_POST['work_position']);
+        $is_course_related = mysqli_real_escape_string($conn, $_POST['is_course_related']);
+        $employment_status = mysqli_real_escape_string($conn, $_POST['employment_status']);
+        $date_started = mysqli_real_escape_string($conn, $_POST['date_started']);
+        $is_current_job = mysqli_real_escape_string($conn, $_POST['is_current_job']);
+        $date_ended = mysqli_real_escape_string($conn, $_POST['date_ended']);
+        $salary = mysqli_real_escape_string($conn, $_POST['salary']);
+        $industry = mysqli_real_escape_string($conn, $_POST['industry']);
+
+        $insert_sql = "INSERT INTO work_history (alumni_id, job_title, company_name, company_address, 
+                       work_position, is_course_related, employment_status, date_started, is_current_job, 
+                       date_ended, salary, industry, date_added) 
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())";
+
+        $insert_stmt = mysqli_prepare($conn, $insert_sql);
+        mysqli_stmt_bind_param($insert_stmt, "isssssssssss", 
+            $alumni_id, $job_title, $company_name, $company_address, $work_position, 
+            $is_course_related, $employment_status, $date_started, $is_current_job, 
+            $date_ended, $salary, $industry);
+
+        if (mysqli_stmt_execute($insert_stmt)) {
+            $success = "New work information added successfully!";
+        } else {
+            $error = "Error adding work information: " . mysqli_error($conn);
+        }
     }
 }
 ?>
@@ -69,7 +111,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="assets/css/style.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
 </head>
 <body>
     <div id="particles-js"></div>
@@ -81,6 +122,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <span class="nav-link">Welcome, <?php echo htmlspecialchars($_SESSION['alumni_name']); ?></span>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="logout.php">
                             <i class="fas fa-sign-out-alt me-1"></i>Logout
@@ -96,14 +140,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="col-md-12">
                 <div class="card glass-effect">
                     <div class="card-body">
-                        <h2 class="text-center text-maroon mb-4">Welcome, <?php echo htmlspecialchars($alumni['full_name']); ?>!</h2>
+                        <h2 class="text-center text-maroon mb-4">Alumni Dashboard</h2>
                         
                         <?php if (isset($success)): ?>
-                            <div class="alert alert-success"><?php echo $success; ?></div>
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i><?php echo $success; ?>
+                            </div>
                         <?php endif; ?>
                         
                         <?php if (isset($error)): ?>
-                            <div class="alert alert-danger"><?php echo $error; ?></div>
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-circle me-2"></i><?php echo $error; ?>
+                            </div>
                         <?php endif; ?>
 
                         <form method="POST" class="needs-validation" novalidate>
@@ -113,8 +161,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             </div>
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label">Full Name</label>
-                                    <input type="text" class="form-control" value="<?php echo htmlspecialchars($alumni['full_name']); ?>" readonly>
+                                    <label class="form-label">Student Number</label>
+                                    <input type="text" class="form-control" value="<?php echo htmlspecialchars($alumni['student_number']); ?>" readonly>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Name</label>
+                                    <input type="text" class="form-control" value="<?php echo htmlspecialchars($alumni['first_name'] . ' ' . $alumni['last_name']); ?>" readonly>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Course</label>
@@ -215,6 +267,103 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     </div>
 
+    <!-- Add Work Modal -->
+    <div class="modal fade" id="addWorkModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-maroon text-white">
+                    <h5 class="modal-title"><i class="fas fa-plus-circle me-2"></i>Add New Work Information</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" class="needs-validation" novalidate>
+                    <input type="hidden" name="action" value="add_work">
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Job Title</label>
+                                <input type="text" class="form-control" name="job_title" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Company Name</label>
+                                <input type="text" class="form-control" name="company_name" required>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Company Address</label>
+                                <input type="text" class="form-control" name="company_address" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Position Level</label>
+                                <select class="form-select" name="work_position" required>
+                                    <option value="">Select Position Level...</option>
+                                    <option value="Entry Level">Entry Level</option>
+                                    <option value="Junior Level">Junior Level</option>
+                                    <option value="Mid Level">Mid Level</option>
+                                    <option value="Senior Level">Senior Level</option>
+                                    <option value="Manager">Manager</option>
+                                    <option value="Executive">Executive</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Employment Status</label>
+                                <select class="form-select" name="employment_status" required>
+                                    <option value="">Select Status...</option>
+                                    <option value="Full-time">Full-time</option>
+                                    <option value="Part-time">Part-time</option>
+                                    <option value="Contract">Contract</option>
+                                    <option value="Self-employed">Self-employed</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Industry</label>
+                                <input type="text" class="form-control" name="industry" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Salary Range</label>
+                                <select class="form-select" name="salary" required>
+                                    <option value="">Select Range...</option>
+                                    <option value="Below ₱20,000">Below ₱20,000</option>
+                                    <option value="₱20,000 - ₱30,000">₱20,000 - ₱30,000</option>
+                                    <option value="₱30,000 - ₱40,000">₱30,000 - ₱40,000</option>
+                                    <option value="₱40,000 - ₱50,000">₱40,000 - ₱50,000</option>
+                                    <option value="Above ₱50,000">Above ₱50,000</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Date Started</label>
+                                <input type="date" class="form-control" name="date_started" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Is Current Job?</label>
+                                <select class="form-select" name="is_current_job" onchange="toggleDateEnded(this)" required>
+                                    <option value="">Select...</option>
+                                    <option value="Yes">Yes</option>
+                                    <option value="No">No</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6" id="dateEndedField" style="display: none;">
+                                <label class="form-label">Date Ended</label>
+                                <input type="date" class="form-control" name="date_ended">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Is Course Related?</label>
+                                <select class="form-select" name="is_course_related" required>
+                                    <option value="">Select...</option>
+                                    <option value="Yes">Yes</option>
+                                    <option value="No">No</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-maroon">Add Work Information</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Initialize particles.js
@@ -253,6 +402,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             retina_detect: true
         });
 
+        function toggleDateEnded(select) {
+            const dateEndedField = document.getElementById('dateEndedField');
+            const dateEndedInput = document.querySelector('input[name="date_ended"]');
+            
+            if (select.value === 'No') {
+                dateEndedField.style.display = 'block';
+                dateEndedInput.required = true;
+            } else {
+                dateEndedField.style.display = 'none';
+                dateEndedInput.required = false;
+                dateEndedInput.value = '';
+            }
+        }
+
         // Form validation
         (function () {
             'use strict'
@@ -268,5 +431,47 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             })
         })()
     </script>
+
+    <style>
+    .bg-maroon {
+        background-color: #800000 !important;
+    }
+    .btn-maroon {
+        background-color: #800000;
+        color: white;
+    }
+    .btn-maroon:hover {
+        background-color: #600000;
+        color: white;
+    }
+    .timeline {
+        position: relative;
+        padding: 20px 0;
+    }
+    .timeline-item {
+        position: relative;
+        padding-left: 40px;
+        margin-bottom: 20px;
+    }
+    .timeline-item:before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #800000;
+    }
+    .timeline-item:after {
+        content: '';
+        position: absolute;
+        left: -6px;
+        top: 0;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #800000;
+    }
+    </style>
 </body>
 </html> 

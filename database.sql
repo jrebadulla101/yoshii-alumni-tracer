@@ -20,6 +20,7 @@ INSERT IGNORE INTO courses (course_name) VALUES
 -- Create alumni table
 CREATE TABLE IF NOT EXISTS alumni (
     alumni_id INT PRIMARY KEY AUTO_INCREMENT,
+    student_number VARCHAR(20) NOT NULL UNIQUE,
     first_name VARCHAR(50) NOT NULL,
     middle_name VARCHAR(50),
     middle_initial CHAR(1),
@@ -29,14 +30,14 @@ CREATE TABLE IF NOT EXISTS alumni (
     email VARCHAR(100) UNIQUE NOT NULL,
     phone VARCHAR(20) NOT NULL,
     address TEXT NOT NULL,
-    job_title VARCHAR(100) NOT NULL,
-    company_name VARCHAR(100) NOT NULL,
-    company_address TEXT NOT NULL,
-    work_position VARCHAR(100) NOT NULL,
-    is_course_related ENUM('Yes', 'No') NOT NULL,
+    job_title VARCHAR(100),
+    company_name VARCHAR(100),
+    company_address TEXT,
+    work_position VARCHAR(100),
+    is_course_related ENUM('Yes', 'No'),
     employment_status ENUM('Full-time', 'Part-time', 'Self-employed', 'Unemployed') NOT NULL,
-    date_started DATE NOT NULL,
-    is_current_job ENUM('Yes', 'No') NOT NULL,
+    date_started DATE,
+    is_current_job ENUM('Yes', 'No'),
     date_ended DATE,
     document_type ENUM('Alumni ID', 'Student ID', 'Government ID', 'Other') NOT NULL,
     document_upload VARCHAR(255),
@@ -45,7 +46,9 @@ CREATE TABLE IF NOT EXISTS alumni (
     password VARCHAR(255) NOT NULL,
     date_signed DATETIME NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    salary DECIMAL(10,2),
+    industry VARCHAR(100)
 );
 
 -- Create admin table
@@ -58,7 +61,7 @@ CREATE TABLE IF NOT EXISTS admin (
 
 -- Insert default admin
 INSERT IGNORE INTO admin (username, password) VALUES 
-('admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'); -- password: admin123
+('admin', '$2a$12$5nzFc1ohdCCAf9Mozr.BHeFEizZGv5/NaDJDOufcy3pZP8waQkYt2'); -- password: admin
 
 -- Create employment_history table
 CREATE TABLE IF NOT EXISTS employment_history (
