@@ -17,7 +17,7 @@ if (!isset($_GET['id'])) {
 $id = mysqli_real_escape_string($conn, $_GET['id']);
 
 // Get alumni information
-$sql = "SELECT * FROM alumni WHERE alumni_id = ?";
+$sql = "SELECT *, CONCAT(first_name, ' ', last_name) AS full_name FROM alumni WHERE alumni_id = ?";
 $stmt = mysqli_prepare($conn, $sql);
 if (!$stmt) {
     error_log("Prepare failed: " . mysqli_error($conn));
@@ -46,12 +46,15 @@ if (!$alumni) {
 
 // Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $full_name = mysqli_real_escape_string($conn, $_POST['full_name']);
+    $first_name = mysqli_real_escape_string($conn, $_POST['first_name']);
+    $last_name = mysqli_real_escape_string($conn, $_POST['last_name']);
+    
     $course = mysqli_real_escape_string($conn, $_POST['course']);
     $year_graduated = mysqli_real_escape_string($conn, $_POST['year_graduated']);
     $email = mysqli_real_escape_string($conn, $_POST['email']);
     $phone = mysqli_real_escape_string($conn, $_POST['phone']);
     $address = mysqli_real_escape_string($conn, $_POST['address']);
+    $gender = mysqli_real_escape_string($conn, $_POST['gender']);
     $job_title = mysqli_real_escape_string($conn, $_POST['job_title']);
     $company_name = mysqli_real_escape_string($conn, $_POST['company_name']);
     $company_address = mysqli_real_escape_string($conn, $_POST['company_address']);
@@ -64,12 +67,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $additional_info = mysqli_real_escape_string($conn, $_POST['additional_info']);
 
     $update_sql = "UPDATE alumni SET 
-                   full_name = ?, 
+                   first_name = ?,
+                   last_name = ?, 
                    course = ?, 
                    year_graduated = ?, 
                    email = ?, 
                    phone = ?, 
                    address = ?, 
+                   gender = ?,
                    job_title = ?, 
                    company_name = ?, 
                    company_address = ?, 
@@ -83,9 +88,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                    WHERE alumni_id = ?";
 
     $update_stmt = mysqli_prepare($conn, $update_sql);
-    mysqli_stmt_bind_param($update_stmt, "ssssssssssssssssi", 
-        $full_name, $course, $year_graduated, $email, $phone, $address,
-        $job_title, $company_name, $company_address, $work_position,
+    mysqli_stmt_bind_param($update_stmt, "ssssssssssssssssssi", 
+        $first_name, $last_name, $course, $year_graduated, $email, $phone, $address,
+        $gender, $job_title, $company_name, $company_address, $work_position,
         $is_course_related, $employment_status, $date_started,
         $is_current_job, $date_ended, $additional_info, $id);
 
@@ -153,8 +158,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             </div>
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label">Full Name</label>
-                                    <input type="text" class="form-control" name="full_name" value="<?php echo htmlspecialchars($alumni['full_name']); ?>" required>
+                                    <label class="form-label">First Name</label>
+                                    <input type="text" class="form-control" name="first_name" value="<?php echo htmlspecialchars($alumni['first_name']); ?>" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Last Name</label>
+                                    <input type="text" class="form-control" name="last_name" value="<?php echo htmlspecialchars($alumni['last_name']); ?>" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Gender</label>
+                                    <select class="form-select" name="gender" required>
+                                        <option value="">Select Gender...</option>
+                                        <option value="Male" <?php echo $alumni['gender'] == 'Male' ? 'selected' : ''; ?>>Male</option>
+                                        <option value="Female" <?php echo $alumni['gender'] == 'Female' ? 'selected' : ''; ?>>Female</option>
+                                        <option value="Other" <?php echo $alumni['gender'] == 'Other' ? 'selected' : ''; ?>>Other</option>
+                                        <option value="Prefer not to say" <?php echo $alumni['gender'] == 'Prefer not to say' ? 'selected' : ''; ?>>Prefer not to say</option>
+                                    </select>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label">Course</label>

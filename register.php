@@ -8,6 +8,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $first_name = mysqli_real_escape_string($conn, $_POST['first_name']);
     $middle_name = mysqli_real_escape_string($conn, $_POST['middle_name']);
     $middle_initial = mysqli_real_escape_string($conn, $_POST['middle_initial']);
+    $gender = mysqli_real_escape_string($conn, $_POST['gender']);
     $last_name = mysqli_real_escape_string($conn, $_POST['last_name']);
     $course = mysqli_real_escape_string($conn, $_POST['course']);
     $year_graduated = mysqli_real_escape_string($conn, $_POST['year_graduated']);
@@ -70,15 +71,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Set employment_status based on employment_check
         $employment_status = $_POST['employment_check'] ?? 'Unemployed';
 
-        $sql = "INSERT INTO alumni (student_number, first_name, middle_name, middle_initial, last_name, course, year_graduated, 
+        $sql = "INSERT INTO alumni (student_number, first_name, middle_name, middle_initial, gender, last_name, course, year_graduated, 
                 email, phone, address, job_title, company_name, company_address, work_position, is_course_related, 
                 employment_status, date_started, is_current_job, date_ended, document_type, document_upload, 
                 additional_info, signature_data, password, date_signed, salary, industry) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)";
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL)";
 
         $stmt = mysqli_prepare($conn, $sql);
-        mysqli_stmt_bind_param($stmt, "sssssssssssssssssssssssss", 
-            $student_number, $first_name, $middle_name, $middle_initial, $last_name, $course, $year_graduated, 
+        mysqli_stmt_bind_param($stmt, "ssssssssssssssssssssssssss", 
+            $student_number, $first_name, $middle_name, $middle_initial, $gender, $last_name, $course, $year_graduated, 
             $email, $phone, $address, $job_title, $company_name, $company_address, $work_position, 
             $is_course_related, $employment_status, $date_started, $is_current_job, $date_ended, 
             $document_type, $document_upload, $additional_info, $signature_data, $hashed_password, $date_signed);
@@ -154,6 +155,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fas fa-user"></i></span>
                                         <input type="text" class="form-control" name="middle_initial" maxlength="1">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Gender</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-venus-mars"></i></span>
+                                        <select class="form-select" name="gender" required>
+                                            <option value="">Select Gender...</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                            <option value="Other">Other</option>
+                                            <option value="Prefer not to say">Prefer not to say</option>
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
