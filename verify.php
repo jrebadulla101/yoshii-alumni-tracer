@@ -2,7 +2,7 @@
 header('Content-Type: application/json');
 
 // OCR.Space API Key - Replace with your actual API key
-$apiKey = 'K89629484988957'; // Get your free API key from https://ocr.space/ocrapi
+$apiKey = 'addyourownAPI'; // Get your free API key from https://ocr.space/ocrapi
 
 // Get the form data
 $firstName = $_POST['first_name'] ?? '';
